@@ -12,6 +12,28 @@ from itertools import combinations
 
 st.set_page_config(page_title="🎱 LottoLab v5.0", page_icon="🎱", layout="wide")
 
+# ============================================================
+# 0. 비밀번호 잠금
+# ============================================================
+def check_password():
+    if "authenticated" not in st.session_state:
+        st.session_state.authenticated = False
+    if st.session_state.authenticated:
+        return True
+    st.title("🔒 LottoLab 확률 분석 엔진 v5.0")
+    st.caption("접근하려면 비밀번호를 입력하세요.")
+    password = st.text_input("비밀번호", type="password")
+    if st.button("로그인", type="primary"):
+        if password == "lotto2026":
+            st.session_state.authenticated = True
+            st.rerun()
+        else:
+            st.error("❌ 비밀번호가 틀렸습니다.")
+    return False
+
+if not check_password():
+    st.stop()
+
 CACHE_FILE = "lotto_cache.json"
 
 # ============================================================
@@ -21,7 +43,7 @@ def load_from_excel():
     try:
         df = pd.read_excel("lotto.xlsx", engine="openpyxl")
     except FileNotFoundError:
-        st.error("❌ lotto.xlsx 파일이 없습니다! superkts.com/lotto/download 에서 다운받아 같은 폴더에 넣어주세요.")
+        st.error("❌ lotto.xlsx 파일이 없습니다!")
         return []
     data = []
     for _, row in df.iterrows():
@@ -342,7 +364,6 @@ def main():
 
     menu = st.sidebar.radio("📋 메뉴", ["📊 통계 분석", "🎯 번호 추천", "🔬 백테스팅", "🔄 이월수 분석"])
 
-    # ---- 📊 통계 분석 ----
     if menu == "📊 통계 분석":
         st.header("📊 통계 분석")
         recent_n = st.sidebar.slider("최근 N회차 분석", 50, len(data), 100)
@@ -396,7 +417,6 @@ def main():
         fig5.update_layout(title="구간별 번호 출현")
         st.plotly_chart(fig5, use_container_width=True)
 
-    # ---- 🎯 번호 추천 ----
     elif menu == "🎯 번호 추천":
         st.header("🎯 번호 추천")
         num_sets = st.sidebar.slider("추천 세트 수", 1, 20, 5)
@@ -420,7 +440,6 @@ def main():
             else:
                 st.warning("조건을 만족하는 조합을 찾지 못했습니다.")
 
-    # ---- 🔬 백테스팅 ----
     elif menu == "🔬 백테스팅":
         st.header("🔬 백테스팅 (과거 데이터로 전략 검증)")
         test_rounds = st.sidebar.slider("테스트 회차 수", 50, 500, 100)
@@ -449,7 +468,6 @@ def main():
                 fig = px.bar(res_df, x="등수", y="횟수", title="등수별 당첨 분포", color="등수")
                 st.plotly_chart(fig, use_container_width=True)
 
-    # ---- 🔄 이월수 분석 ----
     elif menu == "🔄 이월수 분석":
         st.header("🔄 이월수 분석")
         st.markdown("직전 회차 번호 중 다음 회차에도 등장하는 '이월수' 패턴을 분석합니다.")
